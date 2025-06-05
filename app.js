@@ -1,301 +1,325 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const dropzone = document.getElementById('dropzone')
-  const togglePreviewButton = document.getElementById('toggle-preview')
-  const saveLayoutButton = document.getElementById('save-layout')
-  const loadLayoutButton = document.getElementById('load-layout')
-  const publishButton = document.getElementById('publish-button')
-  const publishModal = document.getElementById('publish-modal')
-  const publishConfirmButton = document.getElementById('publish-confirm')
-  const publishCancelButton = document.getElementById('publish-cancel')
-  const websiteNameInput = document.getElementById('website-name')
-  const previewHeader = document.getElementById('preview-header')
-  let isPreview = false
+// Google Sites-like Web Builder
 
-  // Initialize interact.js for drag-and-drop
-  interact('.draggable')
+// --- Sidebar Tabs Content ---
+const components = [
+  {
+    type: 'header',
+    label: 'Header',
+    html: `<h2 contenteditable="true" class="text-2xl font-bold">Header</h2>`
+  },
+  {
+    type: 'paragraph',
+    label: 'Paragraph',
+    html: `<p contenteditable="true" class="text-gray-600">Paragraph text</p>`
+  },
+  {
+    type: 'button',
+    label: 'Button',
+    html: `<button contenteditable="true" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Button</button>`
+  },
+  {
+    type: 'image',
+    label: 'Image',
+    html: `<img src="https://via.placeholder.com/320x100" alt="Image" class="rounded w-full h-auto" />`
+  },
+  {
+    type: 'divider',
+    label: 'Divider',
+    html: `<hr class="my-2 border-gray-300">`
+  },
+  {
+    type: 'embed',
+    label: 'Embed',
+    html: `<div contenteditable="true" class="bg-gray-100 rounded p-2 text-xs text-gray-500">Paste embed (YouTube, Map, HTML...)</div>`
+  }
+];
+
+let pages = [
+  { name: 'Home', content: '' }
+];
+let currentPage = 0;
+
+// --- Undo/Redo Stack ---
+let undoStack = [], redoStack = [];
+function saveState() {
+  undoStack.push(document.getElementById('dropzone').innerHTML);
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+}
+function undo() {
+  if (undoStack.length > 1) {
+    redoStack.push(undoStack.pop());
+    document.getElementById('dropzone').innerHTML = undoStack[undoStack.length - 1];
+    rebindAll();
+  }
+}
+function redo() {
+  if (redoStack.length) {
+    const state = redoStack.pop();
+    undoStack.push(state);
+    document.getElementById('dropzone').innerHTML = state;
+    rebindAll();
+  }
+}
+
+// --- Toolbar Actions ---
+function showToolbar(component) {
+  // Remove any existing toolbar
+  const old = component.querySelector('.component-toolbar');
+  if (old) old.remove();
+  const toolbar = document.createElement('div');
+  toolbar.className = 'component-toolbar';
+  toolbar.innerHTML = `
+    <button class="icon-btn" title="Edit"><i class="lucide-edit"></i></button>
+    <button class="icon-btn" title="Duplicate"><i class="lucide-copy"></i></button>
+    <button class="icon-btn" title="Delete"><i class="lucide-trash"></i></button>
+  `;
+  toolbar.querySelector('[title="Edit"]').onclick = () => makeEditable(component);
+  toolbar.querySelector('[title="Duplicate"]').onclick = () => {
+    const clone = component.cloneNode(true);
+    component.parentNode.insertBefore(clone, component.nextSibling);
+    saveState();
+    rebindAll();
+  };
+  toolbar.querySelector('[title="Delete"]').onclick = () => {
+    component.remove();
+    saveState();
+    rebindAll();
+  };
+  component.appendChild(toolbar);
+}
+
+// --- Inline Editing ---
+function makeEditable(component) {
+  component.classList.add('editable');
+  const el = component.querySelector('[contenteditable]');
+  if (el) el.focus();
+  el.onblur = () => {
+    component.classList.remove('editable');
+    saveState();
+  };
+}
+
+// --- Drag and Drop (with interact.js) ---
+function makeDraggable(component) {
+  interact(component)
     .draggable({
+      inertia: true,
+      autoScroll: true,
       onmove: dragMoveListener,
-    })
-    .on('dragend', (event) => {
-      const component = event.target.cloneNode(true)
-      component.classList.remove('draggable')
-      component.classList.add('component')
-      dropzone.appendChild(component)
-      makeComponentDraggable(component)
-    })
-
-  function dragMoveListener(event) {
-    const target = event.target
-    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
-    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
-
-    target.style.transform = `translate(${x}px, ${y}px)`
-    target.setAttribute('data-x', x)
-    target.setAttribute('data-y', y)
-  }
-
-  function makeComponentDraggable(component) {
-    interact(component)
-      .draggable({
-        onmove: dragMoveListener,
-      })
-  }
-
-  togglePreviewButton.addEventListener('click', () => {
-    isPreview = !isPreview
-    togglePreviewButton.textContent = isPreview ? 'Edit' : 'Preview'
-    dropzone.classList.toggle('preview-mode')
-    previewHeader.style.display = isPreview ? 'block' : 'none'
-  })
-
-  saveLayoutButton.addEventListener('click', () => {
-    const components = Array.from(dropzone.children).map((component) => ({
-      type: component.getAttribute('data-type'),
-      content: component.getAttribute('data-content'),
-      style: component.getAttribute('style'),
-    }))
-    localStorage.setItem('websiteLayout', JSON.stringify(components))
-  })
-
-  loadLayoutButton.addEventListener('click', () => {
-    const layout = localStorage.getItem('websiteLayout')
-    if (layout) {
-      const components = JSON.parse(layout)
-      dropzone.innerHTML = ''
-      components.forEach((component) => {
-        const newComponent = document.createElement('div')
-        newComponent.className = 'component'
-        newComponent.setAttribute('data-type', component.type)
-        newComponent.setAttribute('data-content', component.content)
-        newComponent.style = component.style
-        switch (component.type) {
-          case 'header':
-            newComponent.innerHTML = `<h2 class="text-2xl font-bold">${component.content}</h2>`
-            break
-          case 'paragraph':
-            newComponent.innerHTML = `<p class="text-gray-600">${component.content}</p>`
-            break
-          case 'button':
-            newComponent.innerHTML = `<button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">${component.content}</button>`
-            break
-          case 'avatar':
-            newComponent.innerHTML = `
-              <div class="flex items-center space-x-2">
-                <div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>
-                <span>Avatar</span>
-              </div>
-            `
-            break
-          case 'input':
-            newComponent.innerHTML = `
-              <div class="flex flex-col space-y-1.5">
-                <label for="input-1" class="text-sm font-medium text-gray-700">Label</label>
-                <input id="input-1" type="text" class="border border-gray-300 rounded px-3 py-2" placeholder="Input" />
-              </div>
-            `
-            break
-          case 'textarea':
-            newComponent.innerHTML = `
-              <div class="flex flex-col space-y-1.5">
-                <label for="textarea-1" class="text-sm font-medium text-gray-700">Label</label>
-                <textarea id="textarea-1" class="border border-gray-300 rounded px-3 py-2" placeholder="Textarea"></textarea>
-              </div>
-            `
-            break
-          case 'radio-group':
-            newComponent.innerHTML = `
-              <div class="flex items-center space-x-2">
-                <input id="option-one-1" type="radio" name="radio-group-1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
-                <label for="option-one-1" class="ml-2 block text-sm font-medium text-gray-700">Option One</label>
-              </div>
-              <div class="flex items-center space-x-2">
-                <input id="option-two-1" type="radio" name="radio-group-1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
-                <label for="option-two-1" class="ml-2 block text-sm font-medium text-gray-700">Option Two</label>
-              </div>
-            `
-            break
-          case 'select':
-            newComponent.innerHTML = `
-              <select class="border border-gray-300 rounded px-3 py-2">
-                <option value="option-one">Option One</option>
-                <option value="option-two">Option Two</option>
-              </select>
-            `
-            break
-        }
-        dropzone.appendChild(newComponent)
-        makeComponentDraggable(newComponent)
-      })
-    }
-  })
-
-  publishButton.addEventListener('click', () => {
-    publishModal.style.display = 'flex'
-  })
-
-  publishCancelButton.addEventListener('click', () => {
-    publishModal.style.display = 'none'
-  })
-
-  publishConfirmButton.addEventListener('click', () => {
-    const websiteName = websiteNameInput.value.trim()
-    if (websiteName) {
-      const components = Array.from(dropzone.children).map((component) => ({
-        type: component.getAttribute('data-type'),
-        content: component.getAttribute('data-content'),
-        style: component.getAttribute('style'),
-      }))
-
-      let htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${websiteName}</title>
-          <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-          <link href="https://cdn.jsdelivr.net/npm/@lucideicons/lucide@0.252.0/css/lucide.min.css" rel="stylesheet">
-        </head>
-        <body class="bg-white">
-          <div class="min-h-screen flex flex-col">
-            <header class="bg-white shadow-lg">
-              <div class="container mx-auto px-4 py-6 flex justify-between items-center">
-                <h1 class="text-2xl font-bold">${websiteName}</h1>
-              </div>
-            </header>
-            <main class="flex-grow container mx-auto px-4 py-8">
-              <div class="p-4 space-y-2">
-      `
-
-      components.forEach((component) => {
-        switch (component.type) {
-          case 'header':
-            htmlContent += `<h2 class="text-2xl font-bold">${component.content}</h2>`
-            break
-          case 'paragraph':
-            htmlContent += `<p class="text-gray-600">${component.content}</p>`
-            break
-          case 'button':
-            htmlContent += `<button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">${component.content}</button>`
-            break
-          case 'avatar':
-            htmlContent += `
-              <div class="flex items-center space-x-2">
-                <div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>
-                <span>Avatar</span>
-              </div>
-            `
-            break
-          case 'input':
-            htmlContent += `
-              <div class="flex flex-col space-y-1.5">
-                <label for="input-1" class="text-sm font-medium text-gray-700">Label</label>
-                <input id="input-1" type="text" class="border border-gray-300 rounded px-3 py-2" placeholder="Input" />
-              </div>
-            `
-            break
-          case 'textarea':
-            htmlContent += `
-              <div class="flex flex-col space-y-1.5">
-                <label for="textarea-1" class="text-sm font-medium text-gray-700">Label</label>
-                <textarea id="textarea-1" class="border border-gray-300 rounded px-3 py-2" placeholder="Textarea"></textarea>
-              </div>
-            `
-            break
-          case 'radio-group':
-            htmlContent += `
-              <div class="flex items-center space-x-2">
-                <input id="option-one-1" type="radio" name="radio-group-1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
-                <label for="option-one-1" class="ml-2 block text-sm font-medium text-gray-700">Option One</label>
-              </div>
-              <div class="flex items-center space-x-2">
-                <input id="option-two-1" type="radio" name="radio-group-1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
-                <label for="option-two-1" class="ml-2 block text-sm font-medium text-gray-700">Option Two</label>
-              </div>
-            `
-            break
-          case 'select':
-            htmlContent += `
-              <select class="border border-gray-300 rounded px-3 py-2">
-                <option value="option-one">Option One</option>
-                <option value="option-two">Option Two</option>
-              </select>
-            `
-            break
-        }
-      })
-
-      htmlContent += `
-              </div>
-            </main>
-            <footer class="bg-gray-100 mt-8">
-              <div class="container mx-auto px-4 py-6 text-center">
-                <p>&copy; 2023 ${websiteName}. All rights reserved.</p>
-              </div>
-            </footer>
-          </div>
-        </body>
-        </html>
-      `
-
-      const blob = new Blob([htmlContent], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = websiteName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
-      publishModal.style.display = 'none'
-    }
-  })
-
-  // Styling Options
-  dropzone.addEventListener('click', (event) => {
-    const component = event.target.closest('.component')
-    if (component) {
-      const stylingOptions = `
-        <div class="styling-options">
-          <label for="bg-color">Background Color:</label>
-          <input type="text" id="bg-color" placeholder="e.g., #ffffff" />
-          <label for="text-color">Text Color:</label>
-          <input type="text" id="text-color" placeholder="e.g., #000000" />
-          <label for="font-size">Font Size:</label>
-          <input type="text" id="font-size" placeholder="e.g., 16px" />
-          <label for="font-family">Font Family:</label>
-          <select id="font-family">
-            <option value="Arial">Arial</option>
-            <option value="Helvetica">Helvetica</option>
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Courier New">Courier New</option>
-          </select>
-          <button id="apply-styles">Apply Styles</button>
-        </div>
-      `
-
-      const existingOptions = component.querySelector('.styling-options')
-      if (existingOptions) {
-        existingOptions.remove()
-      } else {
-        component.insertAdjacentHTML('beforeend', stylingOptions)
+      onend: function (event) {
+        component.style.transform = '';
+        component.setAttribute('data-x', 0);
+        component.setAttribute('data-y', 0);
       }
+    });
+}
+function dragMoveListener(event) {
+  const target = event.target;
+  let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+  let y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+  target.style.transform = `translate(${x}px, ${y}px)`;
+  target.setAttribute('data-x', x);
+  target.setAttribute('data-y', y);
+}
 
-      const applyStylesButton = component.querySelector('#apply-styles')
-      applyStylesButton.addEventListener('click', () => {
-        const bgColor = component.querySelector('#bg-color').value
-        const textColor = component.querySelector('#text-color').value
-        const fontSize = component.querySelector('#font-size').value
-        const fontFamily = component.querySelector('#font-family').value
+// --- Section/Column Layouts ---
+function addSection(cols = 2) {
+  const section = document.createElement('div');
+  section.className = 'section';
+  for (let i = 0; i < cols; i++) {
+    const column = document.createElement('div');
+    column.className = 'column';
+    column.setAttribute('data-droppable', 'true');
+    column.ondragover = e => e.preventDefault();
+    column.ondrop = e => {
+      const type = e.dataTransfer.getData('component-type');
+      if (!type) return;
+      const template = components.find(c => c.type === type);
+      if (!template) return;
+      const compDiv = document.createElement('div');
+      compDiv.className = 'component';
+      compDiv.innerHTML = template.html;
+      compDiv.setAttribute('data-type', type);
+      makeDraggable(compDiv);
+      bindComponentEvents(compDiv);
+      column.appendChild(compDiv);
+      saveState();
+    };
+    section.appendChild(column);
+  }
+  document.getElementById('dropzone').appendChild(section);
+  saveState();
+}
 
-        if (bgColor) component.style.backgroundColor = bgColor
-        if (textColor) component.style.color = textColor
-        if (fontSize) component.style.fontSize = fontSize
-        if (fontFamily) component.style.fontFamily = fontFamily
+function rebindAll() {
+  // For all components in all columns, re-apply events and drag
+  document.querySelectorAll('.component').forEach(bindComponentEvents);
+}
 
-        component.querySelector('.styling-options').remove()
-      })
+// --- Component Binding ---
+function bindComponentEvents(component) {
+  component.onclick = e => {
+    document.querySelectorAll('.component').forEach(c => c.classList.remove('selected'));
+    component.classList.add('selected');
+    showToolbar(component);
+    e.stopPropagation();
+  };
+  makeDraggable(component);
+}
+
+// --- Sidebar Tabs ---
+function renderInsertTab() {
+  const container = document.createElement('div');
+  components.forEach(comp => {
+    const block = document.createElement('div');
+    block.className = 'component mb-2 cursor-pointer';
+    block.innerHTML = `<span class="font-medium">${comp.label}</span>`;
+    block.draggable = true;
+    block.ondragstart = e => e.dataTransfer.setData('component-type', comp.type);
+    block.onclick = () => {
+      // Add to first column of last section or create new section if none
+      let lastSection = document.querySelector('.section:last-child');
+      let column = lastSection ? lastSection.querySelector('.column') : null;
+      if (!column) {
+        addSection();
+        lastSection = document.querySelector('.section:last-child');
+        column = lastSection.querySelector('.column');
+      }
+      const compDiv = document.createElement('div');
+      compDiv.className = 'component';
+      compDiv.innerHTML = comp.html;
+      compDiv.setAttribute('data-type', comp.type);
+      makeDraggable(compDiv);
+      bindComponentEvents(compDiv);
+      column.appendChild(compDiv);
+      saveState();
+    };
+    container.appendChild(block);
+  });
+  document.getElementById('sidebar-content').innerHTML = '';
+  document.getElementById('sidebar-content').appendChild(container);
+}
+function renderPagesTab() {
+  const container = document.createElement('div');
+  const list = document.createElement('ul');
+  pages.forEach((p, idx) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <button class="primary-btn mb-2 w-full${currentPage === idx ? ' bg-blue-500' : ''}">${p.name}</button>
+    `;
+    li.onclick = () => switchPage(idx);
+    list.appendChild(li);
+  });
+  container.appendChild(list);
+  const addBtn = document.createElement('button');
+  addBtn.className = 'primary-btn mt-4 w-full';
+  addBtn.innerText = 'Add Page';
+  addBtn.onclick = () => {
+    const name = prompt('Page name?','New Page');
+    if (name) {
+      pages.push({ name, content: '' });
+      renderPagesTab();
     }
-  })
-})
+  };
+  container.appendChild(addBtn);
+  document.getElementById('sidebar-content').innerHTML = '';
+  document.getElementById('sidebar-content').appendChild(container);
+}
+function renderThemesTab() {
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div>
+      <label class="block mb-2 font-medium">Theme Color:</label>
+      <select id="theme-color" class="w-full border rounded p-2">
+        <option value="default">Default (Blue)</option>
+        <option value="emerald">Emerald</option>
+        <option value="rose">Rose</option>
+        <option value="slate">Slate</option>
+      </select>
+    </div>
+  `;
+  document.getElementById('sidebar-content').innerHTML = '';
+  document.getElementById('sidebar-content').appendChild(container);
+  document.getElementById('theme-color').onchange = e => {
+    document.body.className = `bg-${e.target.value === 'default' ? 'slate-50' : e.target.value + '-50'}`;
+  };
+}
+
+// --- Sidebar Tab Switch ---
+document.querySelectorAll('.sidebar-tab').forEach(tab => {
+  tab.onclick = function () {
+    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    if (this.dataset.tab === 'insert') renderInsertTab();
+    if (this.dataset.tab === 'pages') renderPagesTab();
+    if (this.dataset.tab === 'themes') renderThemesTab();
+  };
+});
+
+// --- Section Add ---
+document.getElementById('add-section').onclick = () => addSection();
+
+// --- Undo/Redo ---
+document.getElementById('undo-btn').onclick = () => undo();
+document.getElementById('redo-btn').onclick = () => redo();
+
+// --- Preview Mode ---
+let previewMode = false;
+document.getElementById('preview-btn').onclick = () => {
+  previewMode = !previewMode;
+  document.getElementById('dropzone').classList.toggle('pointer-events-none', previewMode);
+  document.getElementById('preview-btn').innerText = previewMode ? 'Edit' : 'Preview';
+};
+
+// --- Publish Modal ---
+const publishModal = document.getElementById('publish-modal');
+document.getElementById('publish-btn').onclick = () => publishModal.classList.add('active');
+document.getElementById('publish-cancel').onclick = () => publishModal.classList.remove('active');
+document.getElementById('publish-confirm').onclick = () => {
+  const name = document.getElementById('website-name').value.trim() || "website.html";
+  const html = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${document.getElementById('site-name').innerText || 'My Site'}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  </head>
+  <body>
+    ${document.getElementById('dropzone').innerHTML}
+  </body>
+  </html>
+  `;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  publishModal.classList.remove('active');
+};
+
+// --- Page Switching ---
+function switchPage(idx) {
+  pages[currentPage].content = document.getElementById('dropzone').innerHTML;
+  currentPage = idx;
+  document.getElementById('dropzone').innerHTML = pages[currentPage].content || '';
+  rebindAll(); saveState();
+  renderPagesTab();
+}
+
+// --- Global Click to Deselect ---
+document.body.onclick = e => {
+  document.querySelectorAll('.component').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.component-toolbar').forEach(tb => tb.remove());
+};
+
+// --- Initial Render ---
+window.onload = () => {
+  renderInsertTab();
+  addSection();
+  saveState();
+  rebindAll();
+};
