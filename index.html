@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Website Builder</title>
+  <title>Advanced Website Builder</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@lucideicons/lucide@0.252.0/css/lucide.min.css" rel="stylesheet">
   <style>
@@ -113,13 +113,28 @@
     .publish-modal-content button:hover {
       background: #1d4ed8;
     }
+    .styling-options {
+      margin-top: 16px;
+    }
+    .styling-options label {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .styling-options input[type="text"],
+    .styling-options select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
   </style>
 </head>
-<body class="bg-white">
+<body class="bg-gray-100">
   <div id="app" class="min-h-screen flex flex-col">
-    <header class="bg-primary text-primary-foreground shadow-lg">
+    <header class="bg-white shadow-lg">
       <div class="container mx-auto px-4 py-6 flex justify-between items-center">
-        <h1 class="text-2xl font-bold">Website Builder</h1>
+        <h1 class="text-2xl font-bold">Advanced Website Builder</h1>
         <nav>
           <ul class="flex space-x-4">
             <li>
@@ -200,7 +215,7 @@
 
     <footer class="bg-gray-100 mt-8">
       <div class="container mx-auto px-4 py-6 text-center">
-        <p>&copy; 2023 Website Builder. All rights reserved.</p>
+        <p>&copy; 2023 Advanced Website Builder. All rights reserved.</p>
       </div>
     </footer>
 
