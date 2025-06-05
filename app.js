@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </head>
         <body class="bg-white">
           <div class="min-h-screen flex flex-col">
-            <header class="bg-primary text-primary-foreground shadow-lg">
+            <header class="bg-white shadow-lg">
               <div class="container mx-auto px-4 py-6 flex justify-between items-center">
                 <h1 class="text-2xl font-bold">${websiteName}</h1>
               </div>
@@ -249,6 +249,53 @@ document.addEventListener('DOMContentLoaded', () => {
       URL.revokeObjectURL(url)
 
       publishModal.style.display = 'none'
+    }
+  })
+
+  // Styling Options
+  dropzone.addEventListener('click', (event) => {
+    const component = event.target.closest('.component')
+    if (component) {
+      const stylingOptions = `
+        <div class="styling-options">
+          <label for="bg-color">Background Color:</label>
+          <input type="text" id="bg-color" placeholder="e.g., #ffffff" />
+          <label for="text-color">Text Color:</label>
+          <input type="text" id="text-color" placeholder="e.g., #000000" />
+          <label for="font-size">Font Size:</label>
+          <input type="text" id="font-size" placeholder="e.g., 16px" />
+          <label for="font-family">Font Family:</label>
+          <select id="font-family">
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+          <button id="apply-styles">Apply Styles</button>
+        </div>
+      `
+
+      const existingOptions = component.querySelector('.styling-options')
+      if (existingOptions) {
+        existingOptions.remove()
+      } else {
+        component.insertAdjacentHTML('beforeend', stylingOptions)
+      }
+
+      const applyStylesButton = component.querySelector('#apply-styles')
+      applyStylesButton.addEventListener('click', () => {
+        const bgColor = component.querySelector('#bg-color').value
+        const textColor = component.querySelector('#text-color').value
+        const fontSize = component.querySelector('#font-size').value
+        const fontFamily = component.querySelector('#font-family').value
+
+        if (bgColor) component.style.backgroundColor = bgColor
+        if (textColor) component.style.color = textColor
+        if (fontSize) component.style.fontSize = fontSize
+        if (fontFamily) component.style.fontFamily = fontFamily
+
+        component.querySelector('.styling-options').remove()
+      })
     }
   })
 })
