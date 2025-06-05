@@ -27,6 +27,7 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       background-color: #f9fafb;
+      transition: transform 0.2s;
     }
     .preview-mode .component {
       border: none;
@@ -44,9 +45,6 @@
     }
     .preview-mode .sidebar {
       display: none;
-    }
-    .preview-mode .preview-header {
-      display: block;
     }
     .preview-header {
       display: none;
@@ -71,6 +69,50 @@
       height: 100%;
       border: none;
     }
+    .publish-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .publish-modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      width: 50%;
+      max-width: 600px;
+    }
+    .publish-modal-content h2 {
+      font-size: 2xl;
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+    .publish-modal-content p {
+      margin-bottom: 24px;
+    }
+    .publish-modal-content input {
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 4px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .publish-modal-content button {
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .publish-modal-content button:hover {
+      background: #1d4ed8;
+    }
   </style>
 </head>
 <body class="bg-white">
@@ -88,6 +130,9 @@
             </li>
             <li>
               <button id="load-layout" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Load Layout</button>
+            </li>
+            <li>
+              <button id="publish-button" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Publish</button>
             </li>
           </ul>
         </nav>
@@ -158,6 +203,16 @@
         <p>&copy; 2023 Website Builder. All rights reserved.</p>
       </div>
     </footer>
+
+    <div id="publish-modal" class="publish-modal">
+      <div class="publish-modal-content">
+        <h2>Publish Website</h2>
+        <p>Enter the name of your website file:</p>
+        <input id="website-name" type="text" placeholder="MyWebsite.html" />
+        <button id="publish-confirm">Publish</button>
+        <button id="publish-cancel">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
