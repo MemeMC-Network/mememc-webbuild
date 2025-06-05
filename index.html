@@ -2,59 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>MemeMC Framer-Style Webbuilder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MemeMC Webbuild</title>
-  <link href="styles.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
   <link href="https://cdn.jsdelivr.net/npm/@lucideicons/lucide@0.252.0/css/lucide.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-50">
-  <!-- Top Bar -->
-  <header class="top-bar">
-    <div class="flex items-center gap-4">
-      <button id="menu-btn" class="icon-btn"><i class="lucide-menu"></i></button>
-      <span id="site-name" class="font-bold text-xl outline-none" contenteditable="true">My Site</span>
-    </div>
-    <div class="flex gap-2">
-      <button id="undo-btn" class="icon-btn" title="Undo"><i class="lucide-undo"></i></button>
-      <button id="redo-btn" class="icon-btn" title="Redo"><i class="lucide-redo"></i></button>
-      <button id="preview-btn" class="primary-btn">Preview</button>
-      <button id="publish-btn" class="primary-btn bg-purple-500 hover:bg-purple-600">Publish</button>
-      <button id="settings-btn" class="icon-btn" title="Settings"><i class="lucide-settings"></i></button>
-    </div>
-  </header>
-  <div class="flex min-h-screen">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <nav>
-        <ul class="sidebar-tabs">
-          <li><button class="sidebar-tab active" data-tab="insert">Insert</button></li>
-          <li><button class="sidebar-tab" data-tab="pages">Pages</button></li>
-          <li><button class="sidebar-tab" data-tab="themes">Themes</button></li>
-        </ul>
-      </nav>
-      <div id="sidebar-content" class="pt-6">
-        <!-- Insert tab content loaded here -->
+<body>
+  <div id="app-root">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="left">
+        <span id="logo" class="font-bold text-xl">MemeMC Builder</span>
+        <nav id="breadcrumbs" class="breadcrumbs"></nav>
       </div>
+      <div class="center">
+        <button class="top-btn" id="undo-btn"><i class="lucide-undo"></i></button>
+        <button class="top-btn" id="redo-btn"><i class="lucide-redo"></i></button>
+        <button class="top-btn" id="zoom-out-btn"><i class="lucide-zoom-out"></i></button>
+        <span id="zoom-label">100%</span>
+        <button class="top-btn" id="zoom-in-btn"><i class="lucide-zoom-in"></i></button>
+        <button class="top-btn" id="preview-btn"><i class="lucide-monitor"></i> Preview</button>
+      </div>
+      <div class="right">
+        <button class="top-btn" id="publish-btn"><i class="lucide-upload"></i> Publish</button>
+        <button class="top-btn" id="settings-btn"><i class="lucide-settings"></i></button>
+      </div>
+    </header>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="insert"><i class="lucide-plus"></i></button>
+        <button class="sidebar-tab" data-tab="layers"><i class="lucide-layers"></i></button>
+        <button class="sidebar-tab" data-tab="pages"><i class="lucide-file"></i></button>
+        <button class="sidebar-tab" data-tab="theme"><i class="lucide-palette"></i></button>
+        <button class="sidebar-tab" data-tab="assets"><i class="lucide-image"></i></button>
+      </div>
+      <div id="sidebar-panel" class="sidebar-panel"></div>
     </aside>
-    <!-- Main Builder Area -->
-    <main class="flex-1 p-8">
-      <button id="add-section" class="mb-4 px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Add Section</button>
-      <div id="dropzone" class="dropzone"></div>
+    <!-- Canvas -->
+    <main id="main-canvas-area">
+      <div id="device-preview-tabs">
+        <button data-device="desktop" class="device-tab active"><i class="lucide-monitor"></i></button>
+        <button data-device="tablet" class="device-tab"><i class="lucide-tablet"></i></button>
+        <button data-device="mobile" class="device-tab"><i class="lucide-smartphone"></i></button>
+      </div>
+      <div id="canvas-frame" class="canvas-frame desktop">
+        <!-- Canvas/Sections will render here -->
+      </div>
     </main>
   </div>
-
-  <!-- Publish Modal -->
-  <div id="publish-modal" class="publish-modal">
-    <div class="publish-modal-content">
-      <h2>Publish Website</h2>
-      <p>Enter the name of your website file:</p>
-      <input id="website-name" type="text" placeholder="MyWebsite.html" />
-      <button id="publish-confirm">Publish</button>
-      <button id="publish-cancel">Cancel</button>
-    </div>
-  </div>
-
+  <!-- Modals, e.g. Publish, Asset Upload -->
+  <div id="modal-root"></div>
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="app.js"></script>
 </body>
