@@ -3,208 +3,164 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advanced Website Builder</title>
+  <title>Simple Website Builder</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link href="https://cdn.jsdelivr.net/npm/@lucideicons/lucide@0.252.0/css/lucide.min.css" rel="stylesheet">
+  <style>
+    .draggable {
+      cursor: move;
+    }
+    .dropzone {
+      min-height: 400px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+    }
+    .preview-mode .dropzone {
+      border: none;
+      padding: 0;
+    }
+    .component {
+      margin-bottom: 16px;
+      padding: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f9fafb;
+    }
+    .preview-mode .component {
+      border: none;
+      background-color: transparent;
+    }
+    .sidebar {
+      width: 25%;
+      padding-right: 16px;
+    }
+    .main-content {
+      width: 75%;
+    }
+    .preview-mode .main-content {
+      width: 100%;
+    }
+    .preview-mode .sidebar {
+      display: none;
+    }
+    .preview-mode .preview-header {
+      display: block;
+    }
+    .preview-header {
+      display: none;
+      margin-bottom: 16px;
+    }
+    .preview-header h2 {
+      font-size: 2xl;
+      font-weight: bold;
+    }
+    .preview-header p {
+      font-size: sm;
+      color: #6b7280;
+    }
+    .responsive-preview {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .responsive-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
 </head>
-<body class="overflow-hidden">
-  <div id="app" class="flex flex-col h-screen bg-gray-50">
-    <!-- Top Bar with More Controls -->
-    <header class="bg-white shadow-sm p-2 flex justify-between items-center border-b">
-      <div class="flex items-center space-x-4">
-        <div class="flex space-x-1">
-          <button id="templates-btn" class="flex items-center px-3 py-1 rounded hover:bg-gray-100">
-            <i class="mdi mdi-view-grid-outline mr-2"></i>
-            Templates
-          </button>
-          <button id="assets-btn" class="flex items-center px-3 py-1 rounded hover:bg-gray-100">
-            <i class="mdi mdi-folder-image mr-2"></i>
-            Assets
-          </button>
-        </div>
-        
-        <div class="flex items-center">
-          <input id="site-title" value="My Website" class="border-none text-lg font-medium w-auto max-w-xs hover:bg-gray-100 px-2 rounded">
-          <button id="seo-btn" class="ml-2 p-1 rounded hover:bg-gray-100" title="SEO Settings">
-            <i class="mdi mdi-tag-outline"></i>
-          </button>
-        </div>
-      </div>
-      
-      <div class="flex items-center space-x-2">
-        <!-- Device Preview Buttons -->
-        <div class="flex border rounded divide-x">
-          <button data-device="mobile" class="p-2 hover:bg-gray-100" title="Mobile View">
-            <i class="mdi mdi-cellphone"></i>
-          </button>
-          <button data-device="tablet" class="p-2 hover:bg-gray-100" title="Tablet View">
-            <i class="mdi mdi-tablet"></i>
-          </button>
-          <button data-device="desktop" class="p-2 hover:bg-gray-100" title="Desktop View">
-            <i class="mdi mdi-monitor"></i>
-          </button>
-        </div>
-        
-        <button id="preview-btn" class="px-3 py-1 rounded hover:bg-gray-100">
-          <i class="mdi mdi-eye-outline mr-2"></i>
-          <span>Preview</span>
-        </button>
-        
-        <div class="flex space-x-1">
-          <button id="undo-btn" class="p-2 rounded hover:bg-gray-100" disabled title="Undo (Ctrl+Z)">
-            <i class="mdi mdi-undo"></i>
-          </button>
-          <button id="redo-btn" class="p-2 rounded hover:bg-gray-100" disabled title="Redo (Ctrl+Y)">
-            <i class="mdi mdi-redo"></i>
-          </button>
-          <button id="layers-btn" class="p-2 rounded hover:bg-gray-100" title="Layers (Ctrl+L)">
-            <i class="mdi mdi-layers-outline"></i>
-          </button>
-        </div>
-        
-        <button id="save-btn" class="px-3 py-1 rounded hover:bg-gray-100">
-          <i class="mdi mdi-content-save-outline mr-2"></i>
-          Save
-        </button>
-        <button id="publish-btn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-          <i class="mdi mdi-cloud-upload-outline mr-2"></i>
-          Publish
-        </button>
+<body class="bg-white">
+  <div id="app" class="min-h-screen flex flex-col">
+    <header class="bg-primary text-primary-foreground shadow-lg">
+      <div class="container mx-auto px-4 py-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Website Builder</h1>
+        <nav>
+          <ul class="flex space-x-4">
+            <li>
+              <button id="toggle-preview" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+            </li>
+            <li>
+              <button id="save-layout" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save Layout</button>
+            </li>
+            <li>
+              <button id="load-layout" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Load Layout</button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </header>
 
-    <!-- Template/Asset/SEO Panels -->
-    <div id="utility-panels" class="bg-white border-b hidden">
-      <!-- Panels will be loaded here dynamically -->
-    </div>
-
-    <div class="flex flex-1 overflow-hidden">
-      <!-- Left Sidebar - Components -->
-      <div id="left-panel" class="w-64 bg-white border-r flex flex-col transition-all">
-        <!-- ... (same as before but with new components) ... -->
-        <div id="components-content" class="flex-1 overflow-auto p-4">
-          <h2 class="text-sm font-medium text-gray-500 mb-3">BASIC</h2>
-          <div class="grid grid-cols-2 gap-3">
-            <!-- Added new components -->
-            <button data-type="form" class="h-24 border rounded flex flex-col items-center justify-center hover:border-blue-500">
-              <i class="mdi mdi-form-textbox text-2xl mb-2"></i>
-              <span>Form</span>
-            </button>
-            <button data-type="carousel" class="h-24 border rounded flex flex-col items-center justify-center hover:border-blue-500">
-              <i class="mdi mdi-view-carousel text-2xl mb-2"></i>
-              <span>Carousel</span>
-            </button>
+    <main class="flex-grow container mx-auto px-4 py-8 flex">
+      <aside class="sidebar">
+        <div class="p-4 space-y-2">
+          <div class="draggable component" data-type="header" data-content="Header">
+            <h2 class="text-2xl font-bold">Header</h2>
           </div>
-        </div>
-      </div>
-
-      <!-- Panel Toggle Buttons -->
-      <div class="flex flex-col justify-center space-y-2">
-        <button id="toggle-left-panel" class="h-8 w-6 p-0 hover:bg-gray-100 rounded">
-          <i class="mdi mdi-chevron-left"></i>
-        </button>
-      </div>
-
-      <!-- Main Canvas Area with Enhanced Features -->
-      <div class="flex-1 overflow-auto bg-gray-100 flex flex-col items-center p-4">
-        <div id="canvas-container" class="relative">
-          <div id="canvas" class="relative bg-white shadow-lg mx-auto" style="width: 1024px; min-height: 600px;">
-            <!-- Components will be added here -->
+          <div class="draggable component" data-type="paragraph" data-content="Paragraph">
+            <p class="text-gray-600">Paragraph</p>
           </div>
-          <div id="canvas-grid" class="absolute inset-0 pointer-events-none grid" style="display: none; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(20, 1fr);"></div>
-        </div>
-      </div>
-
-      <!-- Right Sidebar - Enhanced Properties -->
-      <div id="right-panel" class="w-80 bg-white border-l flex flex-col">
-        <div class="border-b p-2 flex">
-          <button id="content-tab" class="flex-1 py-2 font-medium border-b-2 border-blue-500">Content</button>
-          <button id="style-tab" class="flex-1 py-2 font-medium">Style</button>
-          <button id="advanced-tab" class="flex-1 py-2 font-medium">Advanced</button>
-        </div>
-        
-        <div id="content-properties" class="flex-1 overflow-auto p-4">
-          <!-- ... (existing content) ... -->
-        </div>
-        
-        <div id="style-properties" class="flex-1 overflow-auto p-4 hidden">
-          <!-- Enhanced style controls -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Background</label>
-              <div class="grid grid-cols-5 gap-2 mb-2">
-                <!-- Color picker -->
-              </div>
-              <input type="text" class="w-full border rounded p-2 text-xs" placeholder="e.g. #ffffff or rgba(255,255,255,0.5)">
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium mb-1">Border</label>
-              <div class="grid grid-cols-3 gap-2">
-                <input type="number" placeholder="Width" class="border rounded p-1 text-sm">
-                <select class="border rounded p-1 text-sm">
-                  <option>Solid</option>
-                  <option>Dashed</option>
-                  <option>Dotted</option>
-                </select>
-                <input type="color" class="w-full h-8">
-              </div>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium mb-1">Effects</label>
-              <div class="space-y-2">
-                <div class="flex items-center">
-                  <input type="range" min="0" max="100" class="flex-1">
-                  <span class="text-xs ml-2 w-8">0%</span>
-                </div>
-                <div class="flex items-center">
-                  <span class="text-xs mr-2">Shadow:</span>
-                  <select class="border rounded p-1 text-sm flex-1">
-                    <option>None</option>
-                    <option>Small</option>
-                    <option>Medium</option>
-                    <option>Large</option>
-                  </select>
-                </div>
-              </div>
+          <div class="draggable component" data-type="button" data-content="Button">
+            <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Button</button>
+          </div>
+          <div class="draggable component" data-type="avatar" data-content="">
+            <div class="flex items-center space-x-2">
+              <div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>
+              <span>Avatar</span>
             </div>
           </div>
-        </div>
-        
-        <div id="advanced-properties" class="flex-1 overflow-auto p-4 hidden">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Custom CSS</label>
-              <textarea class="w-full border rounded p-2 text-xs h-20" placeholder="Enter custom CSS"></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Custom Classes</label>
-              <input type="text" class="w-full border rounded p-2 text-xs" placeholder="space-separated classes">
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Z-Index</label>
-              <input type="number" class="w-full border rounded p-2 text-xs" placeholder="Auto">
+          <div class="draggable component" data-type="input" data-content="">
+            <div class="flex flex-col space-y-1.5">
+              <label for="input-1" class="text-sm font-medium text-gray-700">Label</label>
+              <input id="input-1" type="text" class="border border-gray-300 rounded px-3 py-2" placeholder="Input" />
             </div>
           </div>
+          <div class="draggable component" data-type="textarea" data-content="">
+            <div class="flex flex-col space-y-1.5">
+              <label for="textarea-1" class="text-sm font-medium text-gray-700">Label</label>
+              <textarea id="textarea-1" class="border border-gray-300 rounded px-3 py-2" placeholder="Textarea"></textarea>
+            </div>
+          </div>
+          <div class="draggable component" data-type="radio-group" data-content="">
+            <div class="flex items-center space-x-2">
+              <input id="option-one-1" type="radio" name="radio-group-1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+              <label for="option-one-1" class="ml-2 block text-sm font-medium text-gray-700">Option One</label>
+            </div>
+            <div class="flex items-center space-x-2">
+              <input id="option-two-1" type="radio" name="radio-group-1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+              <label for="option-two-1" class="ml-2 block text-sm font-medium text-gray-700">Option Two</label>
+            </div>
+          </div>
+          <div class="draggable component" data-type="select" data-content="">
+            <select class="border border-gray-300 rounded px-3 py-2">
+              <option value="option-one">Option One</option>
+              <option value="option-two">Option Two</option>
+            </select>
+          </div>
         </div>
+      </aside>
+      <section class="main-content">
+        <div id="preview-header" class="preview-header">
+          <h2>Preview Mode</h2>
+          <p>See how your website will look</p>
+        </div>
+        <div id="dropzone" class="dropzone">
+          <!-- Components will be dropped here -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-gray-100 mt-8">
+      <div class="container mx-auto px-4 py-6 text-center">
+        <p>&copy; 2023 Website Builder. All rights reserved.</p>
       </div>
-    </div>
+    </footer>
   </div>
 
-  <!-- Resize Handles Template -->
-  <template id="resize-handles">
-    <div class="resize-handle resize-handle-n"></div>
-    <div class="resize-handle resize-handle-e"></div>
-    <div class="resize-handle resize-handle-s"></div>
-    <div class="resize-handle resize-handle-w"></div>
-    <div class="resize-handle resize-handle-ne"></div>
-    <div class="resize-handle resize-handle-nw"></div>
-    <div class="resize-handle resize-handle-se"></div>
-    <div class="resize-handle resize-handle-sw"></div>
-  </template>
-
-  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
