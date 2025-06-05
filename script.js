@@ -1,1010 +1,451 @@
-// DOM Elements
-const app = {
-  canvas: document.getElementById('canvas'),
-  componentsTab: document.getElementById('components-tab'),
-  themesTab: document.getElementById('themes-tab'),
-  componentsContent: document.getElementById('components-content'),
-  themesContent: document.getElementById('themes-content'),
-  contentTab: document.getElementById('content-tab'),
-  styleTab: document.getElementById('style-tab'),
-  contentProperties: document.getElementById('content-properties'),
-  styleProperties: document.getElementById('style-properties'),
-  noSelection: document.getElementById('no-selection'),
-  componentProperties: document.getElementById('component-properties'),
-  noSelectionStyle: document.getElementById('no-selection-style'),
-  componentStyles: document.getElementById('component-styles'),
-  textContent: document.getElementById('text-content'),
-  imageContent: document.getElementById('image-content'),
-  videoContent: document.getElementById('video-content'),
-  textStyles: document.getElementById('text-styles'),
-  buttonStyles: document.getElementById('button-styles'),
-  sectionStyles: document.getElementById('section-styles'),
-  textContentInput: document.getElementById('text-content-input'),
-  videoUrl: document.getElementById('video-url'),
-  fontSize: document.getElementById('font-size'),
-  uploadImage: document.getElementById('upload-image'),
-  duplicateBtn: document.getElementById('duplicate-btn'),
-  deleteBtn: document.getElementById('delete-btn'),
-  templatesBtn: document.getElementById('templates-btn'),
-  templatesPanel: document.getElementById('templates-panel'),
-  templatesGrid: document.getElementById('templates-grid'),
-  siteTitle: document.getElementById('site-title'),
-  previewBtn: document.getElementById('preview-btn'),
-  undoBtn: document.getElementById('undo-btn'),
-  redoBtn: document.getElementById('redo-btn'),
-  saveBtn: document.getElementById('save-btn'),
-  publishBtn: document.getElementById('publish-btn'),
-  toggleLeftPanel: document.getElementById('toggle-left-panel'),
-  toggleRightPanel: document.getElementById('toggle-left-panel'),
-  leftPanel: document.getElementById('left-panel'),
-  rightPanel: document.getElementById('right-panel'),
-  colorPalette: document.getElementById('color-palette'),
-  canvasBackground: document.getElementById('canvas-background'),
-  templatesChevron: document.getElementById('templates-chevron')
-};
-
-// State
+// Enhanced State Object
 const state = {
   components: [],
-  selectedComponent: null,
+  selectedComponents: [], // Now supports multiple selection
   activeTool: 'select',
   canvasSize: { width: 1024, height: 'auto' },
   isDragging: false,
+  isResizing: false,
   dragOffset: { x: 0, y: 0 },
+  resizeData: { handle: null, originalSize: null, originalPos: null },
   history: [],
   historyIndex: -1,
   themeColor: '#3b82f6',
   siteTitle: 'My Website',
   showTemplates: false,
+  showAssets: false,
+  showSeo: false,
+  showLayers: false,
   previewMode: false,
   showLeftPanel: true,
-  showRightPanel: true
+  showRightPanel: true,
+  snapToGrid: false,
+  currentDevice: 'desktop',
+  assets: [], // For uploaded assets
+  seoData: { // SEO management
+    title: '',
+    description: '',
+    keywords: '',
+    favicon: null
+  }
 };
 
-// Color Palette
-const COLOR_PALETTE = [
-  '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a',
-  '#ffffff', '#f9fafb', '#f3f4f6', '#e5e7eb', '#d1d5db',
-  '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d',
-  '#10b981', '#059669', '#047857', '#065f46', '#064e3b'
-];
-
-// Templates
-const TEMPLATES = [
-  {
-    name: 'Business',
-    thumbnail: 'business',
-    components: [
-      {
-        id: 'header-1',
-        type: 'header',
-        content: 'Professional Business',
-        position: { x: 50, y: 30 },
-        size: { width: 900, height: 50 },
-        styles: { 
-          color: '#1f2937',
-          backgroundColor: 'transparent',
-          fontSize: '24px',
-          fontWeight: '500',
-          textAlign: 'center'
-        }
-      },
-      {
-        id: 'section-1',
-        type: 'section',
-        content: '',
-        position: { x: 50, y: 100 },
-        size: { width: 900, height: 400 },
-        styles: { 
-          backgroundColor: '#f9fafb',
-          padding: '24px',
-          borderRadius: '8px'
-        },
-        children: [
-          {
-            id: 'grid-1',
-            type: 'grid',
-            content: '',
-            position: { x: 0, y: 0 },
-            size: { width: 900, height: 400 },
-            styles: { 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '16px'
-            },
-            children: [
-              {
-                id: 'text-1',
-                type: 'text',
-                content: 'Our Services',
-                position: { x: 0, y: 0 },
-                size: { width: '100%', height: 'auto' },
-                styles: { 
-                  color: '#1f2937',
-                  backgroundColor: 'transparent',
-                  fontSize: '18px',
-                  fontWeight: '500'
-                }
-              },
-              {
-                id: 'text-2',
-                type: 'text',
-                content: 'We provide exceptional services tailored to your business needs.',
-                position: { x: 0, y: 0 },
-                size: { width: '100%', height: 'auto' },
-                styles: { 
-                  color: '#1f2937',
-                  backgroundColor: 'transparent',
-                  fontSize: '16px'
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
+// New Component Types
+const COMPONENT_TYPES = {
+  // ... previous types ...
+  form: {
+    name: 'Form',
+    icon: 'mdi-form-textbox',
+    defaultContent: '',
+    defaultSize: { width: 400, height: 'auto' },
+    defaultStyles: {
+      backgroundColor: '#ffffff',
+      padding: '16px',
+      borderRadius: '8px'
+    },
+    render: (component) => {
+      return `
+        <div class="form-container">
+          <input type="text" class="form-input" placeholder="Name">
+          <input type="email" class="form-input" placeholder="Email">
+          <textarea class="form-input" placeholder="Message"></textarea>
+          <button class="px-4 py-2 bg-blue-500 text-white rounded">Submit</button>
+        </div>
+      `;
+    }
   },
-  {
-    name: 'Portfolio',
-    thumbnail: 'portfolio',
-    components: [
-      {
-        id: 'header-1',
-        type: 'header',
-        content: 'My Creative Portfolio',
-        position: { x: 50, y: 30 },
-        size: { width: 900, height: 50 },
-        styles: { 
-          color: '#1f2937',
-          backgroundColor: 'transparent',
-          fontSize: '24px',
-          fontWeight: '500',
-          textAlign: 'center'
-        }
-      },
-      {
-        id: 'grid-1',
-        type: 'grid',
-        content: '',
-        position: { x: 50, y: 100 },
-        size: { width: 900, height: 600 },
-        styles: { 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '16px'
-        },
-        children: Array(6).fill(0).map((_, i) => ({
-          id: `image-${i+1}`,
-          type: 'image',
-          content: `Project ${i+1}`,
-          position: { x: 0, y: 0 },
-          size: { width: '100%', height: 200 },
-          styles: { 
-            borderWidth: '1px',
-            borderColor: '#e5e7eb',
-            borderRadius: '4px'
-          }
-        }))
-      }
-    ]
+  carousel: {
+    name: 'Carousel',
+    icon: 'mdi-view-carousel',
+    defaultContent: '',
+    defaultSize: { width: '100%', height: 300 },
+    defaultStyles: {
+      backgroundColor: '#f3f4f6',
+      overflow: 'hidden'
+    },
+    render: (component) => {
+      return `
+        <div class="carousel-container relative">
+          <div class="carousel-slide">Slide 1</div>
+          <div class="carousel-slide hidden">Slide 2</div>
+          <div class="carousel-slide hidden">Slide 3</div>
+          <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+            <button class="w-3 h-3 rounded-full bg-gray-400"></button>
+            <button class="w-3 h-3 rounded-full bg-gray-300"></button>
+            <button class="w-3 h-3 rounded-full bg-gray-300"></button>
+          </div>
+        </div>
+      `;
+    }
   }
-];
+};
 
-// Initialize the app
+// Initialize with new features
 function init() {
-  // Render color palette
-  renderColorPalette();
+  // ... previous init code ...
   
-  // Render templates
-  renderTemplates();
+  // Add new event listeners
+  setupResizeHandlers();
+  setupKeyboardShortcuts();
+  setupDevicePreview();
   
-  // Add event listeners
-  setupEventListeners();
+  // Initialize new components
+  document.querySelectorAll('[data-type]').forEach(btn => {
+    btn.addEventListener('click', () => addComponent(btn.dataset.type));
+  });
   
-  // Initialize with some default components
-  const defaultComponents = [
-    {
-      id: 'navigation-1',
-      type: 'navigation',
-      content: 'Home, About, Services, Contact',
-      position: { x: 0, y: 0 },
-      size: { width: '100%', height: 60 },
-      styles: { 
-        backgroundColor: '#ffffff',
-        padding: '12px 24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }
-    },
-    {
-      id: 'header-1',
-      type: 'header',
-      content: 'Welcome to My Website',
-      position: { x: 50, y: 80 },
-      size: { width: 900, height: 50 },
-      styles: { 
-        color: '#1f2937',
-        backgroundColor: 'transparent',
-        fontSize: '36px',
-        fontWeight: '500',
-        textAlign: 'center'
-      }
-    },
-    {
-      id: 'section-1',
-      type: 'section',
-      content: '',
-      position: { x: 50, y: 160 },
-      size: { width: 900, height: 400 },
-      styles: { 
-        backgroundColor: '#ffffff',
-        padding: '24px',
-        borderRadius: '8px'
-      },
-      children: [
-        {
-          id: 'grid-1',
-          type: 'grid',
-          content: '',
-          position: { x: 0, y: 0 },
-          size: { width: 900, height: 400 },
-          styles: { 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '16px'
-          },
-          children: [
-            {
-              id: 'text-1',
-              type: 'text',
-              content: 'Left Column Content',
-              position: { x: 0, y: 0 },
-              size: { width: '100%', height: 'auto' },
-              styles: { 
-                color: '#1f2937',
-                backgroundColor: 'transparent',
-                fontSize: '16px'
-              }
-            },
-            {
-              id: 'image-1',
-              type: 'image',
-              content: 'Right Column Image',
-              position: { x: 0, y: 0 },
-              size: { width: '100%', height: 300 },
-              styles: { 
-                borderWidth: '1px',
-                borderColor: '#e5e7eb',
-                borderRadius: '4px'
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ];
-  
-  state.components = defaultComponents;
-  saveHistory(defaultComponents);
-  renderComponents();
+  // Initialize grid
+  renderCanvasGrid();
 }
 
-// Render color palette
-function renderColorPalette() {
-  app.colorPalette.innerHTML = COLOR_PALETTE.map(color => `
-    <button 
-      class="w-8 h-8 rounded-full border-2 ${state.themeColor === color ? 'border-blue-500 ring-2 ring-offset-2 ring-blue-500' : 'border-transparent'}"
-      style="background-color: ${color}"
-      data-color="${color}"
-    ></button>
-  `).join('');
-}
-
-// Render templates
-function renderTemplates() {
-  app.templatesGrid.innerHTML = TEMPLATES.map(template => `
-    <div class="cursor-pointer hover:border-blue-500 border rounded overflow-hidden">
-      <div class="bg-gray-100 h-40 flex items-center justify-center">
-        <i class="mdi mdi-view-grid-outline text-4xl text-gray-400"></i>
-      </div>
-      <div class="p-3 font-medium">${template.name}</div>
-    </div>
-  `).join('');
-}
-
-// Render components on canvas
-function renderComponents() {
-  app.canvas.innerHTML = '';
-  
-  state.components.forEach(component => {
-    const element = createComponentElement(component);
-    app.canvas.appendChild(element);
+// New: Component Resizing
+function setupResizeHandlers() {
+  document.addEventListener('mousedown', (e) => {
+    const handle = e.target.closest('.resize-handle');
+    if (!handle || !state.selectedComponent) return;
     
-    if (component.children) {
-      component.children.forEach(child => {
-        const childElement = createComponentElement(child, component.id);
-        element.appendChild(childElement);
-      });
-    }
-  });
-}
-
-// Create a component DOM element
-function createComponentElement(component, parentId = null) {
-  const element = document.createElement('div');
-  element.className = `component ${component.id === state.selectedComponent ? 'selected' : ''}`;
-  element.dataset.id = component.id;
-  
-  // Set position and size
-  Object.assign(element.style, {
-    position: parentId ? 'relative' : 'absolute',
-    left: parentId ? '0' : `${component.position.x}px`,
-    top: parentId ? '0' : `${component.position.y}px`,
-    width: typeof component.size.width === 'string' ? component.size.width : `${component.size.width}px`,
-    height: typeof component.size.height === 'string' ? component.size.height : `${component.size.height}px`,
-    ...component.styles
-  });
-  
-  // Set content based on component type
-  switch (component.type) {
-    case 'text':
-    case 'header':
-      element.textContent = component.content;
-      break;
-      
-    case 'image':
-      element.innerHTML = `
-        <div class="image-placeholder w-full h-full flex items-center justify-center">
-          <i class="mdi mdi-image-outline text-4xl text-gray-400"></i>
-        </div>
-      `;
-      break;
-      
-    case 'button':
-      element.innerHTML = `
-        <div class="w-full h-full flex items-center justify-center">
-          ${component.content}
-        </div>
-      `;
-      break;
-      
-    case 'divider':
-      element.style.borderBottom = '1px solid #d1d5db';
-      break;
-      
-    case 'section':
-      element.innerHTML = `
-        <div class="w-full h-full relative">
-          ${component.children ? '' : `
-            <button class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200">
-              <i class="mdi mdi-plus"></i>
-            </button>
-          `}
-        </div>
-      `;
-      break;
-      
-    case 'grid':
-      // Grid content is handled by its children
-      break;
-      
-    case 'video':
-      element.innerHTML = `
-        <div class="video-placeholder w-full h-full flex items-center justify-center">
-          <div class="text-center">
-            <div class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-2">
-              <i class="mdi mdi-play text-white text-2xl"></i>
-            </div>
-            <p>Video Embed</p>
-          </div>
-        </div>
-      `;
-      break;
-      
-    case 'spacer':
-      // Spacer is just an empty div
-      break;
-      
-    case 'navigation':
-      element.innerHTML = `
-        <div class="navigation-bar w-full h-full">
-          <div class="font-medium">${state.siteTitle}</div>
-          <div class="flex space-x-6">
-            ${component.content.split(',').map(item => `
-              <div class="hover:text-blue-500 transition-colors">${item.trim()}</div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-      break;
-  }
-  
-  return element;
-}
-
-// Save current state to history
-function saveHistory(components) {
-  state.history = [...state.history.slice(0, state.historyIndex + 1), JSON.parse(JSON.stringify(components))];
-  state.historyIndex = state.history.length - 1;
-  updateUndoRedoButtons();
-}
-
-// Update undo/redo buttons state
-function updateUndoRedoButtons() {
-  app.undoBtn.disabled = state.historyIndex <= 0;
-  app.redoBtn.disabled = state.historyIndex >= state.history.length - 1;
-}
-
-// Setup event listeners
-function setupEventListeners() {
-  // Component buttons
-  document.querySelectorAll('[data-type]').forEach(button => {
-    button.addEventListener('click', () => {
-      const type = button.dataset.type;
-      addComponent(type);
-    });
-  });
-  
-  // Canvas interactions
-  app.canvas.addEventListener('mousedown', handleCanvasMouseDown);
-  app.canvas.addEventListener('mousemove', handleCanvasMouseMove);
-  app.canvas.addEventListener('mouseup', handleCanvasMouseUp);
-  
-  // Tabs
-  app.componentsTab.addEventListener('click', () => {
-    app.componentsContent.classList.remove('hidden');
-    app.themesContent.classList.add('hidden');
-    app.componentsTab.classList.add('border-blue-500');
-    app.themesTab.classList.remove('border-blue-500');
-  });
-  
-  app.themesTab.addEventListener('click', () => {
-    app.componentsContent.classList.add('hidden');
-    app.themesContent.classList.remove('hidden');
-    app.componentsTab.classList.remove('border-blue-500');
-    app.themesTab.classList.add('border-blue-500');
-  });
-  
-  app.contentTab.addEventListener('click', () => {
-    app.contentProperties.classList.remove('hidden');
-    app.styleProperties.classList.add('hidden');
-    app.contentTab.classList.add('border-blue-500');
-    app.styleTab.classList.remove('border-blue-500');
-  });
-  
-  app.styleTab.addEventListener('click', () => {
-    app.contentProperties.classList.add('hidden');
-    app.styleProperties.classList.remove('hidden');
-    app.contentTab.classList.remove('border-blue-500');
-    app.styleTab.classList.add('border-blue-500');
-  });
-  
-  // Color palette
-  app.colorPalette.addEventListener('click', (e) => {
-    if (e.target.dataset.color) {
-      state.themeColor = e.target.dataset.color;
-      renderColorPalette();
-    }
-  });
-  
-  // Templates
-  app.templatesBtn.addEventListener('click', () => {
-    state.showTemplates = !state.showTemplates;
-    app.templatesPanel.classList.toggle('hidden');
-    app.templatesChevron.className = state.showTemplates ? 
-      'mdi mdi-chevron-up ml-1' : 'mdi mdi-chevron-down ml-1';
-  });
-  
-  // Other buttons
-  app.undoBtn.addEventListener('click', undo);
-  app.redoBtn.addEventListener('click', redo);
-  app.saveBtn.addEventListener('click', saveWebsite);
-  app.publishBtn.addEventListener('click', exportWebsite);
-  app.previewBtn.addEventListener('click', togglePreview);
-  app.siteTitle.addEventListener('change', updateSiteTitle);
-  app.duplicateBtn.addEventListener('click', duplicateSelectedComponent);
-  app.deleteBtn.addEventListener('click', deleteSelectedComponent);
-  app.uploadImage.addEventListener('click', uploadImage);
-  app.textContentInput.addEventListener('change', updateTextContent);
-  app.videoUrl.addEventListener('change', updateVideoUrl);
-  app.fontSize.addEventListener('change', updateFontSize);
-  app.canvasBackground.addEventListener('change', updateCanvasBackground);
-}
-
-// Handle canvas mouse down
-function handleCanvasMouseDown(e) {
-  if (state.previewMode) return;
-  
-  const component = e.target.closest('.component');
-  if (!component) return;
-  
-  if (state.activeTool === 'select') {
-    state.selectedComponent = component.dataset.id;
-    state.isDragging = true;
+    const component = findComponent(state.selectedComponent);
+    if (!component) return;
     
-    const rect = component.getBoundingClientRect();
-    state.dragOffset = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+    state.isResizing = true;
+    state.resizeData = {
+      handle: handle.classList[1].split('-')[2], // n, e, s, w, etc.
+      originalSize: { ...component.size },
+      originalPos: { ...component.position },
+      startX: e.clientX,
+      startY: e.clientY
     };
     
-    renderComponents();
-    showComponentProperties(state.selectedComponent);
-  }
-}
-
-// Handle canvas mouse move
-function handleCanvasMouseMove(e) {
-  if (!state.isDragging || !state.selectedComponent || state.previewMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+  });
   
-  const component = state.components.find(c => c.id === state.selectedComponent);
-  if (!component) return;
-  
-  const canvasRect = app.canvas.getBoundingClientRect();
-  component.position = {
-    x: e.clientX - canvasRect.left - state.dragOffset.x,
-    y: e.clientY - canvasRect.top - state.dragOffset.y
-  };
-  
-  renderComponents();
-}
-
-// Handle canvas mouse up
-function handleCanvasMouseUp() {
-  if (state.isDragging) {
-    state.isDragging = false;
-    saveHistory(state.components);
-  }
-}
-
-// Add a new component
-function addComponent(type, parentId = null) {
-  const newComponent = {
-    id: `comp-${Date.now()}`,
-    type,
-    content: getDefaultContent(type),
-    position: { x: 50, y: 50 },
-    size: getDefaultSize(type),
-    styles: { ...getDefaultStyles(type) }
-  };
-  
-  if (parentId) {
-    const parent = findComponent(parentId);
-    if (parent) {
-      parent.children = [...(parent.children || []), newComponent];
-    }
-  } else {
-    state.components = [...state.components, newComponent];
-  }
-  
-  state.selectedComponent = newComponent.id;
-  saveHistory(state.components);
-  renderComponents();
-  showComponentProperties(newComponent.id);
-}
-
-// Find a component by ID
-function findComponent(id) {
-  for (const component of state.components) {
-    if (component.id === id) return component;
-    if (component.children) {
-      const found = component.children.find(c => c.id === id);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-// Get default content for a component type
-function getDefaultContent(type) {
-  switch (type) {
-    case 'text': return 'Double click to edit text';
-    case 'button': return 'Button';
-    case 'header': return 'Header Text';
-    case 'navigation': return 'Home, About, Contact';
-    case 'video': return 'Video Embed';
-    default: return '';
-  }
-}
-
-// Get default size for a component type
-function getDefaultSize(type) {
-  switch (type) {
-    case 'image': return { width: 200, height: 150 };
-    case 'button': return { width: 150, height: 50 };
-    case 'divider': return { width: '100%', height: 2 };
-    case 'header': return { width: 300, height: 50 };
-    case 'section': return { width: '90%', height: 300 };
-    case 'grid': return { width: '100%', height: 300 };
-    case 'video': return { width: 400, height: 225 };
-    case 'spacer': return { width: '100%', height: 40 };
-    case 'navigation': return { width: '100%', height: 60 };
-    default: return { width: 300, height: 'auto' };
-  }
-}
-
-// Get default styles for a component type
-function getDefaultStyles(type) {
-  return DEFAULT_STYLES[type] || {};
-}
-
-// Show component properties in the right panel
-function showComponentProperties(id) {
-  const component = findComponent(id);
-  if (!component) return;
-  
-  // Show properties panel
-  app.noSelection.classList.add('hidden');
-  app.componentProperties.classList.remove('hidden');
-  app.noSelectionStyle.classList.add('hidden');
-  app.componentStyles.classList.remove('hidden');
-  
-  // Hide all content and style sections
-  app.textContent.classList.add('hidden');
-  app.imageContent.classList.add('hidden');
-  app.videoContent.classList.add('hidden');
-  app.textStyles.classList.add('hidden');
-  app.buttonStyles.classList.add('hidden');
-  app.sectionStyles.classList.add('hidden');
-  
-  // Show relevant content section
-  switch (component.type) {
-    case 'text':
-    case 'header':
-    case 'button':
-    case 'navigation':
-      app.textContent.classList.remove('hidden');
-      app.textContentInput.value = component.content;
-      break;
-      
-    case 'image':
-      app.imageContent.classList.remove('hidden');
-      break;
-      
-    case 'video':
-      app.videoContent.classList.remove('hidden');
-      app.videoUrl.value = component.metadata?.videoUrl || '';
-      break;
-  }
-  
-  // Show relevant style section
-  switch (component.type) {
-    case 'text':
-    case 'header':
-      app.textStyles.classList.remove('hidden');
-      app.fontSize.value = component.styles.fontSize || '16px';
-      break;
-      
-    case 'button':
-      app.buttonStyles.classList.remove('hidden');
-      break;
-      
-    case 'section':
-      app.sectionStyles.classList.remove('hidden');
-      break;
-  }
-}
-
-// Update text content
-function updateTextContent() {
-  const component = findComponent(state.selectedComponent);
-  if (!component) return;
-  
-  component.content = app.textContentInput.value;
-  saveHistory(state.components);
-  renderComponents();
-}
-
-// Update video URL
-function updateVideoUrl() {
-  const component = findComponent(state.selectedComponent);
-  if (!component) return;
-  
-  component.metadata = component.metadata || {};
-  component.metadata.videoUrl = app.videoUrl.value;
-  saveHistory(state.components);
-  renderComponents();
-}
-
-// Update font size
-function updateFontSize() {
-  const component = findComponent(state.selectedComponent);
-  if (!component) return;
-  
-  component.styles.fontSize = app.fontSize.value;
-  saveHistory(state.components);
-  renderComponents();
-}
-
-// Update canvas background
-function updateCanvasBackground() {
-  state.canvasSize.height = app.canvasBackground.value === 'auto' ? 'auto' : 600;
-  renderComponents();
-}
-
-// Upload image (placeholder)
-function uploadImage() {
-  alert('In a real implementation, this would open a file dialog to upload an image');
-}
-
-// Duplicate selected component
-function duplicateSelectedComponent() {
-  if (!state.selectedComponent) return;
-  
-  const component = findComponent(state.selectedComponent);
-  if (!component) return;
-  
-  const newComponent = {
-    ...component,
-    id: `comp-${Date.now()}`,
-    position: { ...component.position, y: component.position.y + 20 }
-  };
-  
-  state.components = [...state.components, newComponent];
-  state.selectedComponent = newComponent.id;
-  saveHistory(state.components);
-  renderComponents();
-  showComponentProperties(newComponent.id);
-}
-
-// Delete selected component
-function deleteSelectedComponent() {
-  if (!state.selectedComponent) return;
-  
-  state.components = state.components.filter(c => c.id !== state.selectedComponent);
-  state.selectedComponent = null;
-  saveHistory(state.components);
-  renderComponents();
-  
-  // Hide properties panel
-  app.noSelection.classList.remove('hidden');
-  app.componentProperties.classList.add('hidden');
-  app.noSelectionStyle.classList.remove('hidden');
-  app.componentStyles.classList.add('hidden');
-}
-
-// Undo action
-function undo() {
-  if (state.historyIndex <= 0) return;
-  
-  state.historyIndex--;
-  state.components = JSON.parse(JSON.stringify(state.history[state.historyIndex]));
-  renderComponents();
-  updateUndoRedoButtons();
-}
-
-// Redo action
-function redo() {
-  if (state.historyIndex >= state.history.length - 1) return;
-  
-  state.historyIndex++;
-  state.components = JSON.parse(JSON.stringify(state.history[state.historyIndex]));
-  renderComponents();
-  updateUndoRedoButtons();
-}
-
-// Toggle preview mode
-function togglePreview() {
-  state.previewMode = !state.previewMode;
-  
-  if (state.previewMode) {
-    app.previewBtn.innerHTML = '<i class="mdi mdi-eye-off-outline mr-2"></i>Exit Preview';
-    app.previewBtn.classList.add('bg-blue-500', 'text-white');
-    app.previewBtn.classList.remove('hover:bg-gray-100');
+  document.addEventListener('mousemove', (e) => {
+    if (!state.isResizing || !state.selectedComponent) return;
     
-    // Hide all component borders
-    document.querySelectorAll('.component').forEach(el => {
-      el.classList.remove('selected');
-    });
-  } else {
-    app.previewBtn.innerHTML = '<i class="mdi mdi-eye-outline mr-2"></i>Preview';
-    app.previewBtn.classList.remove('bg-blue-500', 'text-white');
-    app.previewBtn.classList.add('hover:bg-gray-100');
-  }
-}
-
-// Update site title
-function updateSiteTitle() {
-  state.siteTitle = app.siteTitle.value;
-  
-  // Update navigation component if it exists
-  const navComponent = state.components.find(c => c.type === 'navigation');
-  if (navComponent) {
+    const component = findComponent(state.selectedComponent);
+    if (!component) return;
+    
+    const { handle, originalSize, originalPos, startX, startY } = state.resizeData;
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+    
+    // Handle resizing based on which handle was grabbed
+    switch (handle) {
+      case 'n':
+        component.size.height = Math.max(20, originalSize.height - deltaY);
+        component.position.y = originalPos.y + deltaY;
+        break;
+      case 'e':
+        component.size.width = Math.max(20, originalSize.width + deltaX);
+        break;
+      case 's':
+        component.size.height = Math.max(20, originalSize.height + deltaY);
+        break;
+      case 'w':
+        component.size.width = Math.max(20, originalSize.width - deltaX);
+        component.position.x = originalPos.x + deltaX;
+        break;
+      case 'ne':
+        component.size.height = Math.max(20, originalSize.height - deltaY);
+        component.size.width = Math.max(20, originalSize.width + deltaX);
+        component.position.y = originalPos.y + deltaY;
+        break;
+      case 'nw':
+        component.size.height = Math.max(20, originalSize.height - deltaY);
+        component.size.width = Math.max(20, originalSize.width - deltaX);
+        component.position.x = originalPos.x + deltaX;
+        component.position.y = originalPos.y + deltaY;
+        break;
+      case 'se':
+        component.size.height = Math.max(20, originalSize.height + deltaY);
+        component.size.width = Math.max(20, originalSize.width + deltaX);
+        break;
+      case 'sw':
+        component.size.height = Math.max(20, originalSize.height + deltaY);
+        component.size.width = Math.max(20, originalSize.width - deltaX);
+        component.position.x = originalPos.x + deltaX;
+        break;
+    }
+    
     renderComponents();
-  }
-}
-
-// Save website
-function saveWebsite() {
-  const websiteData = {
-    siteTitle: state.siteTitle,
-    components: state.components,
-    canvasSize: state.canvasSize,
-    themeColor: state.themeColor,
-    createdAt: new Date().toISOString()
-  };
+  });
   
-  const dataStr = JSON.stringify(websiteData, null, 2);
-  alert('Website saved! Here is the JSON:\n\n' + dataStr);
-}
-
-// Export website
-function exportWebsite() {
-  const websiteData = {
-    siteTitle: state.siteTitle,
-    components: state.components,
-    canvasSize: state.canvasSize,
-    themeColor: state.themeColor,
-    createdAt: new Date().toISOString()
-  };
-  
-  const dataStr = JSON.stringify(websiteData, null, 2);
-  const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-  
-  const exportFileDefaultName = 'website-export.json';
-  const linkElement = document.createElement('a');
-  linkElement.setAttribute('href', dataUri);
-  linkElement.setAttribute('download', exportFileDefaultName);
-  linkElement.click();
-}
-
-// Apply template
-function applyTemplate(templateIndex) {
-  const template = TEMPLATES[templateIndex];
-  if (!template) return;
-  
-  state.components = JSON.parse(JSON.stringify(template.components));
-  state.selectedComponent = null;
-  saveHistory(state.components);
-  renderComponents();
-  
-  // Hide properties panel
-  app.noSelection.classList.remove('hidden');
-  app.componentProperties.classList.add('hidden');
-  app.noSelectionStyle.classList.remove('hidden');
-  app.componentStyles.classList.add('hidden');
-  
-  // Hide templates panel
-  state.showTemplates = false;
-  app.templatesPanel.classList.add('hidden');
-  app.templatesChevron.className = 'mdi mdi-chevron-down ml-1';
-}
-
-// Toggle left panel
-function toggleLeftPanel() {
-  state.showLeftPanel = !state.showLeftPanel;
-  app.leftPanel.classList.toggle('hidden');
-}
-
-// Toggle right panel
-function toggleRightPanel() {
-  state.showRightPanel = !state.showRightPanel;
-  app.rightPanel.classList.toggle('hidden');
-}
-
-// Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
-
-// Add template click handlers after rendering
-function setupTemplateClickHandlers() {
-  document.querySelectorAll('#templates-grid > div').forEach((template, index) => {
-    template.addEventListener('click', () => applyTemplate(index));
+  document.addEventListener('mouseup', () => {
+    if (state.isResizing) {
+      state.isResizing = false;
+      saveHistory(state.components);
+    }
   });
 }
 
-// Add text alignment click handlers
-function setupTextAlignmentHandlers() {
-  document.querySelectorAll('[data-align]').forEach(button => {
-    button.addEventListener('click', () => {
+// New: Keyboard Shortcuts
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Don't trigger if typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    // Ctrl+Z - Undo
+    if (e.ctrlKey && e.key === 'z') {
+      e.preventDefault();
+      undo();
+    }
+    
+    // Ctrl+Y - Redo
+    if (e.ctrlKey && e.key === 'y') {
+      e.preventDefault();
+      redo();
+    }
+    
+    // Ctrl+L - Layers panel
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      toggleLayersPanel();
+    }
+    
+    // Delete key - Delete component
+    if (e.key === 'Delete' && state.selectedComponent) {
+      e.preventDefault();
+      deleteSelectedComponent();
+    }
+    
+    // Arrow keys - Move component
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && state.selectedComponent) {
+      e.preventDefault();
       const component = findComponent(state.selectedComponent);
       if (!component) return;
       
-      component.styles.textAlign = button.dataset.align;
-      saveHistory(state.components);
+      const step = e.shiftKey ? 10 : 1;
+      
+      switch (e.key) {
+        case 'ArrowUp': component.position.y -= step; break;
+        case 'ArrowDown': component.position.y += step; break;
+        case 'ArrowLeft': component.position.x -= step; break;
+        case 'ArrowRight': component.position.x += step; break;
+      }
+      
       renderComponents();
+      saveHistory(state.components);
+    }
+  });
+}
+
+// New: Device Preview
+function setupDevicePreview() {
+  document.querySelectorAll('[data-device]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.currentDevice = btn.dataset.device;
+      updateCanvasForDevice();
     });
   });
 }
 
-// Update the init function to include new setup functions
-function init() {
-  // Render color palette
-  renderColorPalette();
+function updateCanvasForDevice() {
+  app.canvas.classList.remove('canvas-mobile', 'canvas-tablet', 'canvas-desktop');
   
-  // Render templates
-  renderTemplates();
+  switch (state.currentDevice) {
+    case 'mobile':
+      app.canvas.classList.add('canvas-mobile');
+      break;
+    case 'tablet':
+      app.canvas.classList.add('canvas-tablet');
+      break;
+    case 'desktop':
+      app.canvas.classList.add('canvas-desktop');
+      break;
+  }
+}
+
+// New: Layer Management
+function toggleLayersPanel() {
+  state.showLayers = !state.showLayers;
+  
+  if (state.showLayers) {
+    renderLayersPanel();
+    app.utilityPanels.innerHTML = `
+      <div class="p-4">
+        <h2 class="text-lg font-medium mb-4">Layers</h2>
+        <div id="layers-list" class="space-y-1"></div>
+      </div>
+    `;
+    renderLayersList();
+  } else {
+    app.utilityPanels.innerHTML = '';
+  }
+  
+  app.utilityPanels.classList.toggle('hidden');
+}
+
+function renderLayersList() {
+  const layersList = document.getElementById('layers-list');
+  if (!layersList) return;
+  
+  layersList.innerHTML = state.components.map(component => `
+    <div class="layer-item ${state.selectedComponent === component.id ? 'selected' : ''}" data-id="${component.id}">
+      <div class="flex items-center">
+        <i class="mdi ${COMPONENT_TYPES[component.type].icon} mr-2"></i>
+        <span>${COMPONENT_TYPES[component.type].name}</span>
+      </div>
+    </div>
+  `).join('');
+  
+  // Add click handlers
+  document.querySelectorAll('.layer-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.selectedComponent = item.dataset.id;
+      renderComponents();
+      renderLayersList();
+      showComponentProperties(state.selectedComponent);
+    });
+  });
+}
+
+// New: Snap to Grid
+function toggleSnapToGrid() {
+  state.snapToGrid = !state.snapToGrid;
+  document.getElementById('canvas-grid').style.display = state.snapToGrid ? 'grid' : 'none';
+}
+
+function renderCanvasGrid() {
+  const grid = document.getElementById('canvas-grid');
+  if (!grid) return;
+  
+  grid.innerHTML = '';
+  grid.style.width = `${state.canvasSize.width}px`;
+  grid.style.height = state.canvasSize.height === 'auto' ? 'auto' : `${state.canvasSize.height}px`;
+}
+
+// New: Asset Management
+function handleAssetUpload(e) {
+  const files = e.target.files;
+  if (!files.length) return;
+  
+  Array.from(files).forEach(file => {
+    if (!file.type.match('image.*')) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      state.assets.push({
+        id: `asset-${Date.now()}`,
+        name: file.name,
+        url: e.target.result,
+        type: 'image'
+      });
+      
+      if (state.showAssets) {
+        renderAssetsPanel();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderAssetsPanel() {
+  app.utilityPanels.innerHTML = `
+    <div class="p-4">
+      <h2 class="text-lg font-medium mb-4">Assets</h2>
+      <div class="mb-4">
+        <label class="block bg-blue-50 text-blue-700 rounded p-2 text-center cursor-pointer hover:bg-blue-100">
+          <input type="file" id="asset-upload" class="hidden" multiple accept="image/*">
+          <i class="mdi mdi-upload mr-2"></i> Upload Images
+        </label>
+      </div>
+      <div id="assets-grid" class="grid grid-cols-3 gap-2"></div>
+    </div>
+  `;
+  
+  document.getElementById('asset-upload').addEventListener('change', handleAssetUpload);
+  
+  const assetsGrid = document.getElementById('assets-grid');
+  assetsGrid.innerHTML = state.assets.map(asset => `
+    <div class="relative group">
+      <img src="${asset.url}" class="w-full h-20 object-cover rounded border">
+      <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+        <button class="p-1 bg-white rounded-full" data-id="${asset.id}" title="Insert">
+          <i class="mdi mdi-plus"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+  
+  // Add insert handlers
+  document.querySelectorAll('#assets-grid button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const asset = state.assets.find(a => a.id === btn.dataset.id);
+      if (!asset) return;
+      
+      addComponent('image', null, asset.url);
+      state.showAssets = false;
+      app.utilityPanels.classList.add('hidden');
+    });
+  });
+}
+
+// New: SEO Tools
+function renderSeoPanel() {
+  app.utilityPanels.innerHTML = `
+    <div class="p-4">
+      <h2 class="text-lg font-medium mb-4">SEO Settings</h2>
+      
+      <div class="mb-6">
+        <h3 class="text-sm font-medium mb-2">Search Preview</h3>
+        <div class="seo-preview">
+          <div class="seo-preview-title">${state.seoData.title || 'Page Title'}</div>
+          <div class="seo-preview-url">example.com</div>
+          <div class="seo-preview-description">${state.seoData.description || 'Page description'}</div>
+        </div>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Page Title</label>
+          <input type="text" id="seo-title" class="w-full border rounded p-2" value="${state.seoData.title}">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Meta Description</label>
+          <textarea id="seo-description" class="w-full border rounded p-2" rows="3">${state.seoData.description || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Keywords</label>
+          <input type="text" id="seo-keywords" class="w-full border rounded p-2" value="${state.seoData.keywords || ''}">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Favicon</label>
+          <input type="file" id="seo-favicon" class="w-full border rounded p-2" accept="image/x-icon,.ico">
+        </div>
+      </div>
+    </div>
+  `;
   
   // Add event listeners
-  setupEventListeners();
+  document.getElementById('seo-title').addEventListener('change', (e) => {
+    state.seoData.title = e.target.value;
+    document.querySelector('.seo-preview-title').textContent = e.target.value || 'Page Title';
+  });
   
-  // Setup template click handlers
-  setupTemplateClickHandlers();
+  document.getElementById('seo-description').addEventListener('change', (e) => {
+    state.seoData.description = e.target.value;
+    document.querySelector('.seo-preview-description').textContent = e.target.value || 'Page description';
+  });
   
-  // Setup text alignment handlers
-  setupTextAlignmentHandlers();
+  document.getElementById('seo-keywords').addEventListener('change', (e) => {
+    state.seoData.keywords = e.target.value;
+  });
   
-  // Initialize with some default components
-  const defaultComponents = [
-    {
-      id: 'navigation-1',
-      type: 'navigation',
-      content: 'Home, About, Services, Contact',
-      position: { x: 0, y: 0 },
-      size: { width: '100%', height: 60 },
-      styles: { 
-        backgroundColor: '#ffffff',
-        padding: '12px 24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }
-    },
-    {
-      id: 'header-1',
-      type: 'header',
-      content: 'Welcome to My Website',
-      position: { x: 50, y: 80 },
-      size: { width: 900, height: 50 },
-      styles: { 
-        color: '#1f2937',
-        backgroundColor: 'transparent',
-        fontSize: '36px',
-        fontWeight: '500',
-        textAlign: 'center'
-      }
-    },
-    {
-      id: 'section-1',
-      type: 'section',
-      content: '',
-      position: { x: 50, y: 160 },
-      size: { width: 900, height: 400 },
-      styles: { 
-        backgroundColor: '#ffffff',
-        padding: '24px',
-        borderRadius: '8px'
-      },
-      children: [
-        {
-          id: 'grid-1',
-          type: 'grid',
-          content: '',
-          position: { x: 0, y: 0 },
-          size: { width: 900, height: 400 },
-          styles: { 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '16px'
-          },
-          children: [
-            {
-              id: 'text-1',
-              type: 'text',
-              content: 'Left Column Content',
-              position: { x: 0, y: 0 },
-              size: { width: '100%', height: 'auto' },
-              styles: { 
-                color: '#1f2937',
-                backgroundColor: 'transparent',
-                fontSize: '16px'
-              }
-            },
-            {
-              id: 'image-1',
-              type: 'image',
-              content: 'Right Column Image',
-              position: { x: 0, y: 0 },
-              size: { width: '100%', height: 300 },
-              styles: { 
-                borderWidth: '1px',
-                borderColor: '#e5e7eb',
-                borderRadius: '4px'
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ];
-  
-  state.components = defaultComponents;
-  saveHistory(defaultComponents);
-  renderComponents();
+  document.getElementById('seo-favicon').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      state.seoData.favicon = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
+
+// Initialize the app
+document.addEventListener('DOMContentLoaded', init);
